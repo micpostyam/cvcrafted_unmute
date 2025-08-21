@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    ports:
+      - "{{ unmute_frontend_port }}:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:{{ unmute_backend_port }}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./
+      target: production
+    ports:
+      - "{{ unmute_backend_port }}:80"
+    environment:
+      - KYUTAI_STT_URL=ws://stt:{{ unmute_stt_port }}
+      - KYUTAI_TTS_URL=ws://tts:{{ unmute_tts_port }}
+      - KYUTAI_LLM_URL=https://api.mistral.ai/v1
+      - KYUTAI_LLM_API_KEY={{ mistral_api_key }}
+      - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
+    depends_on:
+      - stt
+      - tts
+    restart: unless-stopped
+
+  stt:
+    build:
+      context: services/moshi-server
+      dockerfile: public.Dockerfile
+    command: ["worker", "--config", "configs/stt.toml"]
+    ports:
+      - "{{ unmute_stt_port }}:8080"
+    environment:
+      - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - stt_data:/app/data
+      - /tmp/models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  tts:
+    build:
+      context: services/moshi-server
+      dockerfile: public.Dockerfile
+    command: ["worker", "--config", "configs/tts.toml"]
+    ports:
+      - "{{ unmute_tts_port }}:8080"
+    environment:
+      - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
+      - CUDA_VISIBLE_DEVICES=0
+    volumes:
+      - tts_data:/app/data
+      - /tmp/models:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  stt_data:
+  tts_data:

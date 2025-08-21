@@ -1,0 +1,58 @@
+---
+- name: Remove old Docker packages
+  apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+  become: yes
+
+- name: Download Docker installation script
+  get_url:
+    url: https://get.docker.com
+    dest: /tmp/get-docker.sh
+    mode: '0755'
+
+- name: Install Docker
+  shell: sh /tmp/get-docker.sh
+  become: yes
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"
+  become: yes
+
+- name: Install Docker Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_machine }}"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  become: yes
+
+- name: Create docker-compose symlink
+  file:
+    src: /usr/local/bin/docker-compose
+    dest: /usr/bin/docker-compose
+    state: link
+  become: yes
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Verify Docker installation
+  command: docker --version
+  register: docker_version
+
+- name: Display Docker version
+  debug:
+    msg: "Docker installé: {{ docker_version.stdout }}"

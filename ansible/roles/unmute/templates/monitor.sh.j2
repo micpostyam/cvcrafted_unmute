@@ -1,0 +1,23 @@
+#!/bin/bash
+# Script de monitoring Unmute
+
+echo "=== Status Unmute $(date) ==="
+
+echo "🖥️ GPU Status:"
+nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>/dev/null || echo "GPU non disponible"
+
+echo -e "\n🐳 Docker Status:"
+docker-compose -f {{ project_directory }}/docker-compose.production.yml ps
+
+echo -e "\n💾 Disk Usage:"
+df -h /
+
+echo -e "\n🔧 Memory Usage:"
+free -h
+
+echo -e "\n📡 Network Tests:"
+curl -s http://localhost:{{ unmute_frontend_port }} > /dev/null && echo "Frontend ({{ unmute_frontend_port }}): ✅ OK" || echo "Frontend ({{ unmute_frontend_port }}): ❌ KO"
+curl -s http://localhost:{{ unmute_backend_port }}/health > /dev/null && echo "Backend ({{ unmute_backend_port }}): ✅ OK" || echo "Backend ({{ unmute_backend_port }}): ❌ KO"
+
+echo -e "\n📊 Container Logs (dernières 10 lignes):"
+docker-compose -f {{ project_directory }}/docker-compose.production.yml logs --tail=10

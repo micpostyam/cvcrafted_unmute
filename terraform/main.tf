@@ -154,20 +154,14 @@ resource "aws_security_group" "unmute" {
   }
 }
 
-# Instance EC2 avec GPU (utilisation de Spot pour économiser)
-resource "aws_spot_instance_request" "unmute" {
+# Instance EC2 avec GPU (On-Demand pour éviter les limites Spot)
+resource "aws_instance" "unmute" {
   # Configuration de base
   ami                    = data.aws_ami.ubuntu_gpu.id
   instance_type          = var.instance_type
   key_name              = aws_key_pair.unmute.key_name
   vpc_security_group_ids = [aws_security_group.unmute.id]
   subnet_id             = aws_subnet.unmute_public.id
-
-  # Configuration Spot Instance
-  spot_price                     = var.max_spot_price
-  spot_type                     = "persistent" # L'instance redémarre après interruption
-  instance_interruption_behavior = "stop"      # Arrêt plutôt que suppression
-  wait_for_fulfillment          = true        # Attendre que l'instance soit créée
 
   # Stockage optimisé
   root_block_device {
@@ -179,25 +173,30 @@ resource "aws_spot_instance_request" "unmute" {
 
   # Script d'initialisation automatique
   user_data = base64encode(templatefile("${path.module}/scripts/setup-gpu.sh", {
-    github_repo         = var.github_repo
-    mistral_api_key    = var.mistral_api_key
-    hugging_face_token = var.hugging_face_token
-    environment        = var.environment
+    github_repo            = var.github_repo
+    mistral_api_key       = var.mistral_api_key
+    hugging_face_token    = var.hugging_face_token
+    environment           = var.environment
+    enable_auto_shutdown  = var.enable_auto_shutdown
+    shutdown_time         = var.shutdown_time
+    KYUTAI_LLM_URL        = "https://api.mistral.ai/v1"
+    KYUTAI_LLM_API_KEY    = var.mistral_api_key
+    HUGGING_FACE_HUB_TOKEN = var.hugging_face_token
   }))
 
   tags = {
     Name = "unmute-gpu-${var.environment}"
-    Type = "spot-instance"
+    Type = "on-demand-instance"
   }
 }
 
 # IP Elastique pour avoir une adresse fixe
 resource "aws_eip" "unmute" {
-  instance = aws_spot_instance_request.unmute.spot_instance_id
+  instance = aws_instance.unmute.id
   domain   = "vpc"
 
   # Attendre que l'instance soit créée
-  depends_on = [aws_spot_instance_request.unmute]
+  depends_on = [aws_instance.unmute]
 
   tags = {
     Name = "unmute-eip-${var.environment}"

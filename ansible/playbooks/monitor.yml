@@ -1,0 +1,70 @@
+---
+# Playbook pour le monitoring et la maintenance
+- name: "Monitor and Maintain Unmute Application"
+  hosts: aws_gpu_instances
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: "Vérifier l'état des services Docker"
+      shell: |
+        cd {{ project_directory }}
+        docker-compose -f docker-compose.production.yml ps
+      register: docker_status
+
+    - name: "Afficher l'état des conteneurs"
+      debug:
+        var: docker_status.stdout_lines
+
+    - name: "Vérifier l'utilisation GPU"
+      shell: nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits
+      register: gpu_status
+      ignore_errors: yes
+
+    - name: "Afficher l'état GPU"
+      debug:
+        var: gpu_status.stdout_lines
+      when: gpu_status.rc == 0
+
+    - name: "Vérifier les logs des services"
+      shell: |
+        cd {{ project_directory }}
+        docker-compose -f docker-compose.production.yml logs --tail=20 {{ item }}
+      register: service_logs
+      loop:
+        - frontend
+        - backend
+        - stt
+        - tts
+      ignore_errors: yes
+
+    - name: "Afficher les logs récents"
+      debug:
+        msg: "Logs {{ item.item }}: {{ item.stdout_lines[-5:] if item.stdout_lines else 'Aucun log' }}"
+      loop: "{{ service_logs.results }}"
+      when: item.stdout_lines is defined
+
+    - name: "Test de santé des endpoints"
+      uri:
+        url: "http://{{ ansible_default_ipv4.address }}:{{ item.port }}{{ item.path }}"
+        method: GET
+        timeout: 10
+      register: health_tests
+      ignore_errors: yes
+      loop:
+        - { port: "{{ unmute_frontend_port }}", path: "/" }
+        - { port: "{{ unmute_backend_port }}", path: "/health" }
+        - { port: "{{ grafana_port }}", path: "/api/health" }
+
+    - name: "Afficher les résultats des tests de santé"
+      debug:
+        msg: "{{ item.item.port }}{{ item.item.path }}: {{ 'OK' if item.status == 200 else 'KO (' + (item.status|string) + ')' }}"
+      loop: "{{ health_tests.results }}"
+
+    - name: "Redémarrer les services en échec (optionnel)"
+      shell: |
+        cd {{ project_directory }}
+        docker-compose -f docker-compose.production.yml restart {{ restart_services }}
+      when: 
+        - restart_services is defined
+        - restart_services != ""

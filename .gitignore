@@ -5,6 +5,7 @@
 debug/
 recordings/
 .venv/
+venv/
 # only ignore voices/ in the root directory
 /voices/
 

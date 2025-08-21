@@ -1,0 +1,46 @@
+---
+- name: Update system packages
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+  become: yes
+
+- name: Install essential packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - unzip
+      - jq
+      - htop
+      - tree
+      - nano
+      - python3-pip
+      - software-properties-common
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - net-tools
+      - netcat
+    state: present
+  become: yes
+
+- name: Install Python packages
+  pip:
+    name:
+      - docker
+      - docker-compose
+    state: present
+  become: yes
+
+- name: Create project directory
+  file:
+    path: "{{ project_directory }}"
+    state: directory
+    owner: "{{ project_user }}"
+    group: "{{ project_user }}"
+    mode: '0755'
+  become: yes

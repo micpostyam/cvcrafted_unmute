@@ -17,7 +17,7 @@ output "instance_public_dns" {
 
 output "instance_id" {
   description = "ID de l'instance EC2"
-  value       = aws_spot_instance_request.unmute.spot_instance_id
+  value       = aws_instance.unmute.id
 }
 
 # ============================================
@@ -65,10 +65,10 @@ output "restart_services_command" {
 output "estimated_monthly_cost" {
   description = "Coût estimé mensuel (en USD)"
   value = {
-    spot_instance = "~$30-40 (avec g4dn.xlarge spot)"
-    storage      = "~$5-10 (disque EBS)"
-    network      = "~$2-5 (transfert données)"
-    total        = "~$37-55/mois"
+    on_demand_instance = "~$80-120 (avec g4dn.xlarge On-Demand)"
+    storage          = "~$5-10 (disque EBS)"
+    network          = "~$2-5 (transfert données)"
+    total            = "~$87-135/mois (vs ~$37-55 avec Spot)"
   }
 }
 
@@ -97,12 +97,12 @@ output "security_group_id" {
 
 output "instance_state" {
   description = "État actuel de l'instance"
-  value       = aws_spot_instance_request.unmute.instance_state
+  value       = aws_instance.unmute.instance_state
 }
 
 output "spot_instance_state" {
-  description = "État de la demande Spot"
-  value       = aws_spot_instance_request.unmute.spot_request_state
+  description = "Type d'instance (On-Demand)"
+  value       = "on-demand"
 }
 
 # ============================================
@@ -128,9 +128,9 @@ output "next_steps" {
     4. Surveillez les coûts dans la console AWS
     
     5. Pour arrêter l'instance et économiser :
-       aws ec2 stop-instances --instance-ids ${aws_spot_instance_request.unmute.spot_instance_id}
+       aws ec2 stop-instances --instance-ids ${aws_instance.unmute.id}
     
-    ⚠️  Rappel : L'instance Spot peut être interrompue par AWS si la demande est forte.
+    ⚠️  Note : Instance On-Demand (plus chère que Spot mais plus fiable).
     
     📚 Documentation complète : https://github.com/votre-repo/unmute
   EOT

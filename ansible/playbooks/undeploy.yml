@@ -1,0 +1,44 @@
+---
+# Playbook pour nettoyer et supprimer l'application
+- name: "Undeploy Unmute Application"
+  hosts: aws_gpu_instances
+  become: yes
+  gather_facts: no
+
+  vars_prompt:
+    - name: "confirm_cleanup"
+      prompt: "Êtes-vous sûr de vouloir supprimer l'application? (yes/no)"
+      private: no
+      default: "no"
+
+  tasks:
+    - name: "Vérifier la confirmation de nettoyage"
+      fail:
+        msg: "Nettoyage annulé par l'utilisateur"
+      when: confirm_cleanup != "yes"
+
+    - name: "Arrêter les conteneurs Docker"
+      shell: |
+        cd {{ project_directory }}
+        docker-compose -f docker-compose.production.yml down --remove-orphans
+      ignore_errors: yes
+
+    - name: "Supprimer les images Docker"
+      shell: |
+        docker system prune -af --volumes
+      when: cleanup_docker_images | default(false)
+
+    - name: "Supprimer le répertoire du projet"
+      file:
+        path: "{{ project_directory }}"
+        state: absent
+      when: cleanup_project_files | default(false)
+
+    - name: "Supprimer les données de cache"
+      file:
+        path: "/home/{{ ansible_user }}/.cache/huggingface"
+        state: absent
+      when: cleanup_cache | default(false)
+
+    - debug:
+        msg: "✅ Nettoyage terminé"

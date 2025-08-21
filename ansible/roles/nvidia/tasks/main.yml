@@ -1,0 +1,48 @@
+---
+- name: Check if NVIDIA drivers are already installed
+  command: nvidia-smi
+  register: nvidia_check
+  failed_when: false
+  changed_when: false
+
+- name: Download NVIDIA CUDA keyring
+  get_url:
+    url: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+    dest: /tmp/cuda-keyring.deb
+  when: nvidia_check.rc != 0
+  become: yes
+
+- name: Install NVIDIA CUDA keyring
+  apt:
+    deb: /tmp/cuda-keyring.deb
+  when: nvidia_check.rc != 0
+  become: yes
+
+- name: Update package cache after adding NVIDIA repo
+  apt:
+    update_cache: yes
+  when: nvidia_check.rc != 0
+  become: yes
+
+- name: Install NVIDIA drivers and container toolkit
+  apt:
+    name:
+      - "cuda-drivers-{{ nvidia_driver_version }}"
+      - nvidia-container-toolkit
+    state: present
+  when: nvidia_check.rc != 0
+  become: yes
+  notify: 
+    - configure nvidia runtime
+    - restart docker
+    - reboot server
+
+- name: Check NVIDIA installation
+  command: nvidia-smi
+  register: nvidia_final_check
+  failed_when: false
+  changed_when: false
+
+- name: Display NVIDIA status
+  debug:
+    msg: "NVIDIA Status: {{ 'OK' if nvidia_final_check.rc == 0 else 'Installation requise' }}"

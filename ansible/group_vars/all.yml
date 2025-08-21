@@ -1,0 +1,29 @@
+---
+# Configuration générale
+project_name: unmute
+project_user: ubuntu
+project_directory: /home/ubuntu/unmute
+
+# Versions des outils
+docker_compose_version: "2.21.0"
+nvidia_driver_version: "535"
+
+# Configuration Docker
+docker_users:
+  - "{{ project_user }}"
+
+# Configuration Unmute
+unmute_frontend_port: 3000
+unmute_backend_port: 8000
+unmute_stt_port: 8080
+unmute_tts_port: 8081
+
+# Auto-shutdown
+enable_auto_shutdown: true
+shutdown_time: "23:00"
+startup_time: "08:00"
+
+# Timeout configurations
+service_startup_timeout: 300
+health_check_retries: 10
+health_check_delay: 30

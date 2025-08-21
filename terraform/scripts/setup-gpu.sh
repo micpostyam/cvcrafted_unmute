@@ -149,7 +149,7 @@ EOF
 # ============================================
 
 echo "🐳 Création du fichier Docker Compose..."
-cat > docker-compose.yml << 'EOF'
+cat > docker-compose.yml << EOF
 version: '3.8'
 
 services:
@@ -198,6 +198,32 @@ services:
     deploy:
       resources:
         reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Service TTS (Text-to-Speech)
+  tts:
+    build:
+      context: services/moshi-server
+      dockerfile: public.Dockerfile
+    ports:
+      - "8081:8080"
+    command: ["worker", "--config", "configs/tts.toml"]
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - CUDA_VISIBLE_DEVICES=0
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+EOF
           devices:
             - driver: nvidia
               count: 1
