@@ -21,25 +21,21 @@
       debug:
         msg:
           - "Instance: {{ inventory_hostname }}"
-          - "GPU disponible: {{ ansible_devices | selectattr('host', 'match', '.*nvidia.*') | list | length > 0 }}"
+          - "IP: {{ ansible_default_ipv4.address }}"
           - "Mémoire totale: {{ ansible_memory_mb.real.total }}MB"
           - "CPU cores: {{ ansible_processor_cores }}"
 
   roles:
-    - name: "Configuration de base du système"
-      role: common
+    - role: common
       tags: ["common", "base"]
 
-    - name: "Installation de Docker"
-      role: docker
+    - role: docker
       tags: ["docker"]
 
-    - name: "Installation des drivers NVIDIA"
-      role: nvidia
+    - role: nvidia
       tags: ["nvidia", "gpu"]
 
-    - name: "Déploiement de l'application Unmute"
-      role: unmute
+    - role: unmute
       tags: ["unmute", "app"]
 
   post_tasks:

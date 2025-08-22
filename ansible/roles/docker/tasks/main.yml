@@ -10,36 +10,35 @@
     state: absent
   become: yes
 
-- name: Download Docker installation script
-  get_url:
-    url: https://get.docker.com
-    dest: /tmp/get-docker.sh
-    mode: '0755'
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  become: yes
 
-- name: Install Docker
-  shell: sh /tmp/get-docker.sh
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Install Docker packages
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
   become: yes
 
 - name: Add users to docker group
   user:
-    name: "{{ item }}"
+    name: ubuntu
     groups: docker
     append: yes
-  loop: "{{ docker_users }}"
-  become: yes
-
-- name: Install Docker Compose
-  get_url:
-    url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-{{ ansible_system }}-{{ ansible_machine }}"
-    dest: /usr/local/bin/docker-compose
-    mode: '0755'
-  become: yes
-
-- name: Create docker-compose symlink
-  file:
-    src: /usr/local/bin/docker-compose
-    dest: /usr/bin/docker-compose
-    state: link
   become: yes
 
 - name: Start and enable Docker service

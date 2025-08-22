@@ -6,10 +6,10 @@ services:
       context: frontend/
       dockerfile: Dockerfile
     ports:
-      - "{{ unmute_frontend_port }}:3000"
+      - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://localhost:{{ unmute_backend_port }}
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - backend
     restart: unless-stopped
@@ -17,12 +17,12 @@ services:
   backend:
     build:
       context: ./
-      target: production
+      target: prod
     ports:
-      - "{{ unmute_backend_port }}:80"
+      - "8000:80"
     environment:
-      - KYUTAI_STT_URL=ws://stt:{{ unmute_stt_port }}
-      - KYUTAI_TTS_URL=ws://tts:{{ unmute_tts_port }}
+      - KYUTAI_STT_URL=ws://stt:8080
+      - KYUTAI_TTS_URL=ws://tts:8081
       - KYUTAI_LLM_URL=https://api.mistral.ai/v1
       - KYUTAI_LLM_API_KEY={{ mistral_api_key }}
       - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
@@ -37,7 +37,7 @@ services:
       dockerfile: public.Dockerfile
     command: ["worker", "--config", "configs/stt.toml"]
     ports:
-      - "{{ unmute_stt_port }}:8080"
+      - "8080:8080"
     environment:
       - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
       - CUDA_VISIBLE_DEVICES=0
@@ -59,7 +59,7 @@ services:
       dockerfile: public.Dockerfile
     command: ["worker", "--config", "configs/tts.toml"]
     ports:
-      - "{{ unmute_tts_port }}:8080"
+      - "8081:8080"
     environment:
       - HUGGING_FACE_HUB_TOKEN={{ hugging_face_token }}
       - CUDA_VISIBLE_DEVICES=0

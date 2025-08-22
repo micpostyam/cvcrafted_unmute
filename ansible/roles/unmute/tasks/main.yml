@@ -1,90 +1,69 @@
 ---
 - name: Clone Unmute repository
   git:
-    repo: "https://github.com/{{ github_repo }}.git"
-    dest: "{{ project_directory }}"
+    repo: "https://github.com/micpostyam/cvcrafted_unmute.git"
+    dest: "/home/ubuntu/unmute"
     clone: yes
     update: yes
     force: yes
-  become_user: "{{ project_user }}"
+  become_user: ubuntu
 
 - name: Create environment file
   template:
     src: env.j2
-    dest: "{{ project_directory }}/.env"
-    owner: "{{ project_user }}"
-    group: "{{ project_user }}"
+    dest: "/home/ubuntu/unmute/.env"
+    owner: ubuntu
+    group: ubuntu
     mode: '0600'
 
 - name: Create production docker-compose file
   template:
     src: docker-compose.production.yml.j2
-    dest: "{{ project_directory }}/docker-compose.production.yml"
-    owner: "{{ project_user }}"
-    group: "{{ project_user }}"
+    dest: "/home/ubuntu/unmute/docker-compose.production.yml"
+    owner: ubuntu
+    group: ubuntu
     mode: '0644'
 
 - name: Stop existing containers (if any)
   shell: |
-    cd {{ project_directory }}
-    docker-compose -f docker-compose.production.yml down || true
-  become_user: "{{ project_user }}"
+    cd /home/ubuntu/unmute
+    sudo docker-compose -f docker-compose.production.yml down || true
+  become_user: ubuntu
   ignore_errors: yes
 
 - name: Build Docker images
   shell: |
-    cd {{ project_directory }}
-    docker-compose -f docker-compose.production.yml build
-  become_user: "{{ project_user }}"
+    cd /home/ubuntu/unmute
+    sudo docker-compose -f docker-compose.production.yml build
+  become_user: ubuntu
   register: build_result
 
 - name: Start Unmute services
   shell: |
-    cd {{ project_directory }}
-    docker-compose -f docker-compose.production.yml up -d
-  become_user: "{{ project_user }}"
+    cd /home/ubuntu/unmute
+    sudo docker-compose -f docker-compose.production.yml up -d
+  become_user: ubuntu
   register: start_result
 
-- name: Wait for services to be ready
+- name: Wait for frontend service
   wait_for:
-    port: "{{ item }}"
-    host: "{{ ansible_host }}"
-    timeout: "{{ service_startup_timeout }}"
-  loop:
-    - "{{ unmute_frontend_port }}"
-    - "{{ unmute_backend_port }}"
+    port: 3000
+    host: localhost
+    timeout: 300
   ignore_errors: yes
 
-- name: Create monitoring script
-  template:
-    src: monitor.sh.j2
-    dest: "{{ project_directory }}/monitor.sh"
-    owner: "{{ project_user }}"
-    group: "{{ project_user }}"
-    mode: '0755'
-
-- name: Create auto-shutdown script
-  template:
-    src: auto-shutdown.sh.j2
-    dest: /usr/local/bin/unmute-auto-shutdown.sh
-    mode: '0755'
-  become: yes
-  when: enable_auto_shutdown
-
-- name: Setup auto-shutdown cron job
-  cron:
-    name: "Unmute auto-shutdown"
-    minute: "{{ shutdown_time.split(':')[1] }}"
-    hour: "{{ shutdown_time.split(':')[0] }}"
-    job: "/usr/local/bin/unmute-auto-shutdown.sh"
-  become: yes
-  when: enable_auto_shutdown
+- name: Wait for backend service
+  wait_for:
+    port: 8000
+    host: localhost
+    timeout: 300
+  ignore_errors: yes
 
 - name: Display container status
   shell: |
-    cd {{ project_directory }}
-    docker-compose -f docker-compose.production.yml ps
-  become_user: "{{ project_user }}"
+    cd /home/ubuntu/unmute
+    sudo docker-compose -f docker-compose.production.yml ps
+  become_user: ubuntu
   register: container_status
 
 - name: Show container status

@@ -105,6 +105,7 @@ deploy_infrastructure() {
     # Exporter les variables pour Ansible
     export UNMUTE_SERVER_IP="$INSTANCE_IP"
     export UNMUTE_INSTANCE_ID="$INSTANCE_ID"
+    export ANSIBLE_PRIVATE_KEY_FILE="~/unmute_key"
 }
 
 # Configuration et déploiement avec Ansible
@@ -164,7 +165,7 @@ display_final_info() {
     echo "📈 Prometheus: http://$INSTANCE_IP:9090"
     echo ""
     echo "🔑 Connexion SSH:"
-    echo "ssh -i terraform/unmute-key.pem ubuntu@$INSTANCE_IP"
+    echo "ssh -i ~/unmute_key ubuntu@$INSTANCE_IP"
     echo ""
     echo "📝 Commandes utiles:"
     echo "- Monitoring: ./scripts/monitor.sh"

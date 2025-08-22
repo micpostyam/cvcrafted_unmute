@@ -84,6 +84,33 @@ setup_python_environment() {
     log_success "Environnement Python configuré"
 }
 
+# Configuration des clés SSH
+setup_ssh_keys() {
+    log_info "Configuration des clés SSH..."
+    
+    # Vérifier si la clé privée existe
+    if [ ! -f "~/unmute_key" ]; then
+        log_warning "La clé privée ~/unmute_key n'existe pas"
+        log_info "Vous devez avoir la clé privée correspondant à la clé publique configurée dans terraform/.env"
+        return 1
+    fi
+    
+    # Vérifier les permissions de la clé
+    chmod 600 ~/unmute_key
+    
+    # Vérifier si la clé publique correspondante existe
+    if [ -f "~/unmute_key.pub" ]; then
+        log_info "Clé publique trouvée: ~/unmute_key.pub"
+        log_info "Contenu de la clé publique:"
+        cat ~/unmute_key.pub
+    else
+        log_warning "Clé publique ~/unmute_key.pub non trouvée"
+        log_info "Vous pouvez la générer avec: ssh-keygen -y -f ~/unmute_key > ~/unmute_key.pub"
+    fi
+    
+    log_success "Configuration SSH vérifiée"
+}
+
 # Configuration des clés API
 setup_api_keys() {
     log_info "Configuration des clés API..."
@@ -208,6 +235,7 @@ main() {
         "setup")
             check_system_requirements
             setup_python_environment
+            setup_ssh_keys
             setup_api_keys
             show_getting_started
             ;;
@@ -229,13 +257,17 @@ main() {
         "keys")
             setup_api_keys
             ;;
+        "ssh")
+            setup_ssh_keys
+            ;;
         *)
-            echo "Usage: $0 [setup|validate|requirements|python|keys]"
+            echo "Usage: $0 [setup|validate|requirements|python|keys|ssh]"
             echo "  setup        - Configuration complète (défaut)"
             echo "  validate     - Validation de la configuration"
             echo "  requirements - Vérification des prérequis système"
             echo "  python       - Configuration de l'environnement Python"
             echo "  keys         - Configuration des clés API"
+            echo "  ssh          - Configuration des clés SSH"
             exit 1
             ;;
     esac

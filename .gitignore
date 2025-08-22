@@ -6,6 +6,7 @@ debug/
 recordings/
 .venv/
 venv/
+ansible-env/
 # only ignore voices/ in the root directory
 /voices/
 

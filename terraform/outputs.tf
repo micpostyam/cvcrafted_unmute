@@ -45,7 +45,7 @@ output "websocket_url" {
 
 output "ssh_command" {
   description = "Commande SSH pour se connecter à l'instance"
-  value       = "ssh -i ~/.ssh/id_rsa ubuntu@${aws_eip.unmute.public_ip}"
+  value       = "ssh -i ~/unmute_key ubuntu@${aws_eip.unmute.public_ip}"
 }
 
 output "docker_logs_command" {
