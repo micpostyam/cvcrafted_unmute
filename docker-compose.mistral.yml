@@ -92,21 +92,19 @@ services:
     build:
       context: services/moshi-server
       dockerfile: public.Dockerfile
+      args:
+        CUDA_COMPUTE_CAP: "75"          # <— important pour T4
     environment:
-      - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
+      - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./volumes/cargo-registry-stt:/root/.cargo/registry
       - ./volumes/stt-target:/app/target
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/stt-logs:/logs
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    gpus: all   
 
 networks:
   default:
