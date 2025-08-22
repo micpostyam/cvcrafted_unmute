@@ -24,6 +24,8 @@ services:
       dockerfile: hot-reloading.Dockerfile
     volumes:
       - ./frontend/src:/app/src
+    depends_on:
+      - backend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
@@ -38,6 +40,11 @@ services:
       target: hot-reloading
     volumes:
       - ./unmute:/app/unmute
+    depends_on:
+      stt:
+        condition: service_healthy
+      tts:
+        condition: service_healthy
     environment:
       # URLs des services (utilisées dans kyutai_constants.py)
       - KYUTAI_STT_URL=$KYUTAI_STT_URL
@@ -73,6 +80,12 @@ services:
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/tts-logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         reservations:
@@ -95,6 +108,12 @@ services:
       - ./volumes/uv-cache:/root/.cache/uv
       - /tmp/models/:/models
       - ./volumes/stt-logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         reservations:
