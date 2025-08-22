@@ -1,5 +1,5 @@
-# Configuration principale Terraform pour déployer Unmute sur AWS
-# Ce fichier définit l'infrastructure complète nécessaire
+# Configuration principale Terraform pour provisioning infrastructure AWS
+# Ce fichier définit uniquement l'infrastructure de base
 
 # Configuration du provider AWS
 terraform {
@@ -111,36 +111,34 @@ resource "aws_security_group" "unmute" {
   vpc_id      = aws_vpc.unmute.id
   description = "Security group for Unmute application"
 
-  # Règles d'entrée (ingress)
-  
   # SSH pour l'administration
   ingress {
     description = "SSH access"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # ATTENTION: Restreindre à votre IP en production
+    cidr_blocks = var.allowed_ssh_cidr
   }
 
-  # Frontend Next.js
+  # HTTP
   ingress {
-    description = "Frontend (Next.js)"
-    from_port   = 3000
-    to_port     = 3000
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Backend API
+  # HTTPS
   ingress {
-    description = "Backend API"
-    from_port   = 8000
-    to_port     = 8000
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Règles de sortie (egress) - autoriser tout le trafic sortant
+  # Règles de sortie - autoriser tout le trafic sortant
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -154,16 +152,15 @@ resource "aws_security_group" "unmute" {
   }
 }
 
-# Instance EC2 avec GPU (On-Demand pour éviter les limites Spot)
+# Instance EC2 avec GPU
 resource "aws_instance" "unmute" {
-  # Configuration de base
   ami                    = data.aws_ami.ubuntu_gpu.id
   instance_type          = var.instance_type
   key_name              = aws_key_pair.unmute.key_name
   vpc_security_group_ids = [aws_security_group.unmute.id]
   subnet_id             = aws_subnet.unmute_public.id
 
-  # Stockage optimisé
+  # Stockage
   root_block_device {
     volume_type           = "gp3"
     volume_size          = var.disk_size_gb
@@ -171,22 +168,8 @@ resource "aws_instance" "unmute" {
     encrypted            = true
   }
 
-  # Script d'initialisation automatique
-  user_data = base64encode(templatefile("${path.module}/scripts/setup-gpu.sh", {
-    github_repo            = var.github_repo
-    mistral_api_key       = var.mistral_api_key
-    hugging_face_token    = var.hugging_face_token
-    environment           = var.environment
-    enable_auto_shutdown  = var.enable_auto_shutdown
-    shutdown_time         = var.shutdown_time
-    KYUTAI_LLM_URL        = "https://api.mistral.ai/v1"
-    KYUTAI_LLM_API_KEY    = var.mistral_api_key
-    HUGGING_FACE_HUB_TOKEN = var.hugging_face_token
-  }))
-
   tags = {
     Name = "unmute-gpu-${var.environment}"
-    Type = "on-demand-instance"
   }
 }
 
@@ -195,7 +178,6 @@ resource "aws_eip" "unmute" {
   instance = aws_instance.unmute.id
   domain   = "vpc"
 
-  # Attendre que l'instance soit créée
   depends_on = [aws_instance.unmute]
 
   tags = {

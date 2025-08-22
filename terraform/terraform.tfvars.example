@@ -1,54 +1,16 @@
-# Fichier de valeurs par défaut pour Terraform
-# Copiez ce fichier vers terraform.tfvars et modifiez selon vos besoins
+# Exemple de configuration Terraform
+# Copiez ce fichier vers terraform.tfvars et remplissez vos valeurs
 
-# ============================================
-# CONFIGURATION OBLIGATOIRE À MODIFIER
-# ============================================
-
-# Votre clé SSH publique (contenu de ~/.ssh/id_rsa.pub)
-# Obtenez-la avec : cat ~/.ssh/id_rsa.pub
-ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... votre-clé-ici"
-
-# Votre repository GitHub (format: username/repo-name)
-github_repo = "votre-username/unmute"
-
-# Clé API Mistral AI (obtenez-la sur https://console.mistral.ai/)
-mistral_api_key = "votre-clé-mistral-ici"
-
-# Token Hugging Face (obtenez-le sur https://huggingface.co/settings/tokens)
-hugging_face_token = "votre-token-huggingface-ici"
-
-# ============================================
-# CONFIGURATION OPTIONNELLE
-# ============================================
-
-# Région AWS (choisissez la plus proche de vous)
-aws_region = "eu-west-1"  # Irlande - recommandé pour l'Europe
-
-# Environnement
+# Configuration AWS
+aws_region = "us-east-1"
 environment = "prod"
 
-# Type d'instance (ajustez selon votre budget)
-instance_type = "g4dn.xlarge"  # ~30€/mois en Spot
+# Configuration instance
+instance_type = "g4dn.xlarge"
+disk_size_gb = 100
 
-# Prix maximum pour instance Spot (USD/heure)
-max_spot_price = "0.20"  # Ajustez selon le prix actuel
+# Configuration SSH (obligatoire)
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2E... votre-clé-publique-ssh"
 
-# Taille du disque en GB
-disk_size_gb = 50
-
-# Sécurité SSH - Remplacez par votre IP publique pour plus de sécurité
-# Obtenez votre IP avec : curl ipinfo.io/ip
-allowed_ssh_cidr = ["0.0.0.0/0"]  # ATTENTION: Autorise tout le monde
-
-# Auto-shutdown pour économiser
-enable_auto_shutdown = true
-shutdown_time = "23:00"  # Arrêt à 23h
-startup_time = "08:00"   # Démarrage à 8h
-
-# Tags personnalisés
-additional_tags = {
-  Owner      = "votre-nom"
-  Project    = "unmute-ai"
-  CostCenter = "development"
-}
+# Sécurité (optionnel - restreindre à votre IP)
+allowed_ssh_cidr = ["0.0.0.0/0"]
