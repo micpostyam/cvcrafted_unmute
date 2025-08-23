@@ -34,6 +34,8 @@ services:
       dockerfile: hot-reloading.Dockerfile
     volumes:
       - ./frontend/src:/app/src
+    environment:
+      - NEXT_PUBLIC_IN_DOCKER=true
     depends_on:
       - backend
     labels:
@@ -66,10 +68,13 @@ services:
       - HUGGING_FACE_HUB_TOKEN=$HUGGING_FACE_HUB_TOKEN
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/v1`)"
+      - "traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.middlewares=strip-api"
+      - "traefik.http.middlewares.strip-api.replacepathregex.regex=^/api/(.*)"
+      - "traefik.http.middlewares.strip-api.replacepathregex.replacement=/$$1"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.services.backend.loadbalancer.server.port=80"
       - "traefik.http.routers.backend.priority=20"
 
   tts:

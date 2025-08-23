@@ -79,11 +79,16 @@ ClientEventAdapter = TypeAdapter(
     Annotated[ora.ClientEvent, Field(discriminator="type")]
 )
 
-# Allow CORS for local development
-CORS_ALLOW_ORIGINS = ["http://localhost", "http://localhost:3000"]
+# Allow CORS for local development and production HTTPS
+CORS_ALLOW_ORIGINS = [
+    "http://localhost", 
+    "http://localhost:3000",
+    "https://*.nip.io",
+    "https://*.sslip.io",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_origins=["*"],  # Allow all origins for now, will be validated in _cors_headers_for_error
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -586,7 +591,17 @@ async def emit_loop(
 
 def _cors_headers_for_error(request: Request):
     origin = request.headers.get("origin")
-    allow_origin = origin if origin in CORS_ALLOW_ORIGINS else None
+    
+    # Check if origin is allowed
+    allow_origin = None
+    if origin:
+        # Direct match
+        if origin in CORS_ALLOW_ORIGINS:
+            allow_origin = origin
+        # Check wildcard patterns
+        elif any(origin.endswith('.nip.io') or origin.endswith('.sslip.io') for pattern in CORS_ALLOW_ORIGINS if '*' in pattern):
+            allow_origin = origin
+    
     headers = {"Access-Control-Allow-Credentials": "true"}
     if allow_origin:
         headers["Access-Control-Allow-Origin"] = allow_origin
