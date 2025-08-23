@@ -170,9 +170,16 @@ async def _get_health(
                 _check_server_status, _ws_to_http(STT_SERVER) + "/api/build_info"
             )
         )
+        # Construct LLM health check URL, avoiding duplicate /v1 path
+        llm_base_url = _ws_to_http(LLM_SERVER)
+        if llm_base_url.endswith("/v1"):
+            llm_health_url = llm_base_url + "/models"
+        else:
+            llm_health_url = llm_base_url + "/v1/models"
+        
         llm_up = tg.create_task(
             asyncio.to_thread(
-                _check_server_status, _ws_to_http(LLM_SERVER) + "/v1/models"
+                _check_server_status, llm_health_url
             )
         )
         voice_cloning_up = tg.create_task(
