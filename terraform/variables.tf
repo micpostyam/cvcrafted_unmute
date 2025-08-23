@@ -28,14 +28,16 @@ variable "environment" {
 variable "instance_type" {
   description = "Type d'instance EC2 avec GPU"
   type        = string
-  default     = "g4dn.xlarge"
+  default     = "g6.xlarge"
   
   validation {
     condition = contains([
       "g4dn.xlarge",
       "g4dn.2xlarge",
       "g5.xlarge",
-      "g5.2xlarge"
+      "g5.2xlarge",
+      "g6.xlarge",
+      "g6.2xlarge"
     ], var.instance_type)
     error_message = "Type d'instance non supporté."
   }

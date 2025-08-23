@@ -26,19 +26,24 @@ provider "aws" {
   }
 }
 
-# Recherche de l'AMI Ubuntu optimisée pour GPU
-data "aws_ami" "ubuntu_gpu" {
+# Recherche de l'AMI Deep Learning optimisée pour GPU
+data "aws_ami" "nvidia_gpu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical (Ubuntu)
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+    values = ["Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 24.04)*"]
   }
 
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
 }
 
@@ -154,7 +159,7 @@ resource "aws_security_group" "unmute" {
 
 # Instance EC2 avec GPU
 resource "aws_instance" "unmute" {
-  ami                    = data.aws_ami.ubuntu_gpu.id
+  ami                    = data.aws_ami.nvidia_gpu.id
   instance_type          = var.instance_type
   key_name              = aws_key_pair.unmute.key_name
   vpc_security_group_ids = [aws_security_group.unmute.id]

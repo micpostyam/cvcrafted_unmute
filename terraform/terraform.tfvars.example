@@ -2,6 +2,21 @@
 # Copiez ce fichier vers terraform.tfvars et remplissez vos valeurs
 
 # Configuration AWS
+aws_region = "eu-west-1"
+environment = "prod"
+
+# Configuration instance
+instance_type = "g6.xlarge"
+disk_size_gb = 100
+
+# Configuration SSH (obligatoire)
+ssh_public_key = "ssh-rsa AAAAB3NzaC1yc2E... votre-clé-publique-ssh"
+
+# Sécurité (optionnel - restreindre à votre IP)
+allowed_ssh_cidr = ["0.0.0.0/0"]figuration Terraform
+# Copiez ce fichier vers terraform.tfvars et remplissez vos valeurs
+
+# Configuration AWS
 aws_region = "us-east-1"
 environment = "prod"
 
