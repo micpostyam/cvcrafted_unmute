@@ -113,6 +113,19 @@ def _ws_to_http(ws_url: str) -> str:
 def _check_server_status(server_url: str) -> bool:
     """Check if the server is up by sending a GET request."""
     try:
+        # Pour l'API Mistral externe, vérifier avec authentification
+        if "api.mistral.ai" in server_url:
+            from unmute.kyutai_constants import KYUTAI_LLM_API_KEY
+            if KYUTAI_LLM_API_KEY:
+                headers = {"Authorization": f"Bearer {KYUTAI_LLM_API_KEY}"}
+                response = requests.get(server_url, headers=headers, timeout=5)
+                logger.info(f"Mistral API response from {server_url}: {response.status_code}")
+                return response.status_code == 200
+            else:
+                logger.warning("KYUTAI_LLM_API_KEY not set for Mistral API health check")
+                return False
+        
+        # Pour les autres services (locaux)
         response = requests.get(server_url, timeout=2)
         logger.info(f"Response from {server_url}: {response}")
         return response.status_code == 200
