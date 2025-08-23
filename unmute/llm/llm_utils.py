@@ -100,21 +100,25 @@ class LLMStream(Protocol):
 class MistralStream:
     def __init__(self):
         self.current_message_index = 0
-        self.mistral = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        api_key = KYUTAI_LLM_API_KEY or os.environ.get("MISTRAL_API_KEY")
+        if not api_key:
+            raise ValueError("KYUTAI_LLM_API_KEY or MISTRAL_API_KEY must be set")
+        self.mistral = Mistral(api_key=api_key)
 
     async def chat_completion(
         self, messages: list[dict[str, str]]
     ) -> AsyncIterator[str]:
+        model = KYUTAI_LLM_MODEL or "mistral-small-latest"
         event_stream = await self.mistral.chat.stream_async(
-            model="mistral-large-latest",
+            model=model,
             messages=cast(Any, messages),  # It's too annoying to type this properly
             temperature=1.0,
         )
 
         async for event in event_stream:
             delta = event.data.choices[0].delta.content
-            assert isinstance(delta, str)  # make Pyright happy
-            yield delta
+            if delta:  # Skip None or empty deltas
+                yield delta
 
 
 def get_openai_client(

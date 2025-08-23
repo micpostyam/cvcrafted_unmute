@@ -22,6 +22,7 @@ from unmute.audio_input_override import AudioInputOverride
 from unmute.exceptions import make_ora_error
 from unmute.kyutai_constants import (
     FRAME_TIME_SEC,
+    LLM_SERVER,
     RECORDINGS_DIR,
     SAMPLE_RATE,
     SAMPLES_PER_FRAME,
@@ -197,14 +198,20 @@ class UnmuteHandler(AsyncStreamHandler):
         llm_stopwatch = Stopwatch()
 
         quest = await self.start_up_tts(generating_message_i)
-        llm = VLLMStream(
-            # if generating_message_i is 2, then we have a system prompt + an empty
-            # assistant message signalling that we are generating a response.
-            self.openai_client,
-            temperature=FIRST_MESSAGE_TEMPERATURE
-            if generating_message_i == 2
-            else FURTHER_MESSAGES_TEMPERATURE,
-        )
+        
+        # Choose LLM implementation based on server URL
+        if "mistral.ai" in LLM_SERVER:
+            from unmute.llm.llm_utils import MistralStream
+            llm = MistralStream()
+        else:
+            llm = VLLMStream(
+                # if generating_message_i is 2, then we have a system prompt + an empty
+                # assistant message signalling that we are generating a response.
+                self.openai_client,
+                temperature=FIRST_MESSAGE_TEMPERATURE
+                if generating_message_i == 2
+                else FURTHER_MESSAGES_TEMPERATURE,
+            )
 
         messages = self.chatbot.preprocessed_messages()
 
